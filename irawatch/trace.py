@@ -1,6 +1,7 @@
 import os
 import time
 from enum import Enum
+from typing import Union
 from nats.aio.client import Client as NATS
 from irawatch.converter import convert_dict_to_key_values
 from irawatch.trace_pb2 import TracesData, ResourceSpans, Resource, ScopeSpans, InstrumentationScope, Span as Spanpb, KeyValue, AnyValue
@@ -15,15 +16,16 @@ class SpanKind(Enum):
     CONSUMER = 5
 
 
-class Span:
-    def __init__(self, name: str, trace_id: bytes, service_name: str, nc: NATS, parent_span_id=b"", kind = SpanKind.UNSPECIFIED):
+class _Span:
+    service_name: Union[None, str] = None
+    nc: Union[None, NATS] = None
+    collector_subject: str = "irawatch.trace"
+
+    def __init__(self, name: str, trace_id: bytes, parent_span_id=b"", kind = SpanKind.UNSPECIFIED):
         self.name = name
         self.trace_id = trace_id
-        self.service_name = service_name
-        self.nc = nc
         self.parent_span_id = parent_span_id
         self.span_kind = kind
-        self.collector_subject = "irawatch.trace"
         self.start_time = 0
         self.end_time = 0
 
@@ -57,14 +59,33 @@ class Span:
             )]
         )
         
-        
-        await self.nc.publish(self.collector_subject, message.SerializeToString())
+        if self.nc:
+            await self.nc.publish(self.collector_subject, message.SerializeToString())
 
 
-class Tracer:
-    def __init__(self, service_name: str, nc: NATS):
-        self.service_name = service_name
-        self.nc = nc
+class _NoOpSpan:
+    def __init__(self, *args, **kwargs):
+        pass
 
-    def span(self, name: str, trace_id: bytes, parent_span_id=b"", kind=SpanKind.UNSPECIFIED) -> Span:
-        return Span(name, trace_id, self.service_name, self.nc, parent_span_id, kind)
+    def start(self, *args, **kwargs):
+        pass
+    
+    async def stop(self, *args, **kwargs):
+        pass
+
+
+Span: Union[type[_Span], type[_NoOpSpan]] = _NoOpSpan
+
+
+def Tracer(service_name: str, nats_conn: NATS):
+    """
+    Initialize IraWatch Tracer. This function must be called when initializing the app.
+    If not initialized, all other Tracer related classes and functions will be NoOp.
+
+    Args:
+        service_name (str): name of the app or service
+        nc (nats.aio.client.Client): nats connection object
+    """
+    Span = _Span
+    Span.service_name = service_name
+    Span.nc = nats_conn
