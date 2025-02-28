@@ -1,4 +1,4 @@
-from trace_pb2 import KeyValue, AnyValue, ArrayValue, KeyValueList
+from irawatch.trace_pb2 import KeyValue, AnyValue, ArrayValue, KeyValueList
 
 
 def convert_to_any_value(value):

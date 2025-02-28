@@ -2,8 +2,8 @@ import os
 import time
 from enum import Enum
 from nats.aio.client import Client as NATS
-from converter import convert_dict_to_key_values
-from trace_pb2 import TracesData, ResourceSpans, Resource, ScopeSpans, InstrumentationScope, Span as Spanpb, KeyValue, AnyValue
+from irawatch.converter import convert_dict_to_key_values
+from irawatch.trace_pb2 import TracesData, ResourceSpans, Resource, ScopeSpans, InstrumentationScope, Span as Spanpb, KeyValue, AnyValue
 
 
 class SpanKind(Enum):
