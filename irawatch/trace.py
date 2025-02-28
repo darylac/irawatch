@@ -1,7 +1,7 @@
 import os
 import time
 from enum import Enum
-from typing import Union
+from typing import Union, Type
 from nats.aio.client import Client as NATS
 from irawatch.converter import convert_dict_to_key_values
 from irawatch.trace_pb2 import TracesData, ResourceSpans, Resource, ScopeSpans, InstrumentationScope, Span as Spanpb, KeyValue, AnyValue
@@ -68,13 +68,13 @@ class _NoOpSpan:
         pass
 
     def start(self, *args, **kwargs):
-        pass
+        return self
     
     async def stop(self, *args, **kwargs):
         pass
 
 
-Span: Union[type[_Span], type[_NoOpSpan]] = _NoOpSpan
+Span: Union[Type[_Span], Type[_NoOpSpan]] = _NoOpSpan
 
 
 def Tracer(service_name: str, nats_conn: NATS):
@@ -86,6 +86,7 @@ def Tracer(service_name: str, nats_conn: NATS):
         service_name (str): name of the app or service
         nc (nats.aio.client.Client): nats connection object
     """
+    global Span
     Span = _Span
     Span.service_name = service_name
     Span.nc = nats_conn
