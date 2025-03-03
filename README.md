@@ -2,6 +2,13 @@
 
 This is a client library which sends traces to IraWatch collector.
 
+Install 
+
+```bash
+pip install setuptools
+pip install git+ssh://git@github.com/darylac/irawatch.git
+```
+
 ```py
 import nats
 
